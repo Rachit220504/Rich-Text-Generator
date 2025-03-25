@@ -1,18 +1,18 @@
-import './App.scss'
-import './TiptapEditor.css' // New stylesheet for editor styles
+import './App.scss';
+import './TiptapEditor.css'; // New stylesheet for editor styles
 
-import { Color } from '@tiptap/extension-color'
-import ListItem from '@tiptap/extension-list-item'
-import TextStyle from '@tiptap/extension-text-style'
-import { EditorProvider, useCurrentEditor } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import { useState } from 'react'
-import { Extension } from '@tiptap/core'
-import { Node } from '@tiptap/core'
-import { ReactRenderer } from '@tiptap/react'
-import Suggestion from '@tiptap/suggestion'
-import tippy, { Instance, Props } from 'tippy.js'
-import 'tippy.js/dist/tippy.css'
+import { Color } from '@tiptap/extension-color';
+import ListItem from '@tiptap/extension-list-item';
+import TextStyle from '@tiptap/extension-text-style';
+import { EditorProvider, useCurrentEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { useState } from 'react';
+import { Extension } from '@tiptap/core';
+import { Node } from '@tiptap/core';
+import { ReactRenderer } from '@tiptap/react';
+import Suggestion from '@tiptap/suggestion';
+import tippy, { Instance, Props } from 'tippy.js';
+import 'tippy.js/dist/tippy.css';
 
 // Sample variables that would be available for insertion
 const variables = [
@@ -23,34 +23,36 @@ const variables = [
   { id: '5', label: 'Phone', value: '{{phone}}' },
   { id: '6', label: 'Address', value: '{{address}}' },
   { id: '7', label: 'Date', value: '{{date}}' },
-  { id: '8', label: 'Order Number', value: '{{orderNumber}}' }
-]
+  { id: '8', label: 'Order Number', value: '{{orderNumber}}' },
+];
 
-
-interface variable{
-    id: string,
-    label: string,
-    value: string
+interface Variable {
+  id: string;
+  label: string;
+  value: string;
 }
+
 // Variable suggestion component
-const VariableSuggestion = ({ items, command }) => {
+const VariableSuggestion = ({
+  items,
+  command,
+}: {
+  items: Variable[];
+  command: (item: Variable) => void;
+}) => {
   return (
     <div className="variable-suggestion">
       <h3>Insert variable</h3>
       <div className="variable-list">
         {items.map((item, index) => (
-          <button 
-            key={index}
-            className="variable-item"
-            onClick={() => command(item)}
-          >
+          <button key={index} className="variable-item" onClick={() => command(item)}>
             {item.label}
           </button>
         ))}
       </div>
     </div>
-  )
-}
+  );
+};
 
 // Create a variable node extension
 const VariableNode = Node.create({
@@ -62,31 +64,23 @@ const VariableNode = Node.create({
 
   addAttributes() {
     return {
-      id: {
-        default: null,
-      },
-      label: {
-        default: null,
-      },
-      value: {
-        default: null,
-      },
-    }
+      id: { default: null },
+      label: { default: null },
+      value: { default: null },
+    };
   },
 
   parseHTML() {
     return [
       {
         tag: 'span[data-variable]',
-        getAttrs: (el) => {
-          return {
-            id: el.getAttribute('data-id'),
-            label: el.getAttribute('data-label'),
-            value: el.getAttribute('data-value'),
-          }
-        },
+        getAttrs: (el: any) => ({
+          id: el.getAttribute('data-id'),
+          label: el.getAttribute('data-label'),
+          value: el.getAttribute('data-value'),
+        }),
       },
-    ]
+    ];
   },
 
   renderHTML({ node }) {
@@ -100,31 +94,32 @@ const VariableNode = Node.create({
         class: 'variable-token',
       },
       node.attrs.label,
-    ]
+    ];
   },
-})
+});
 
 // Create a variable suggestion plugin
 const variableSuggestion = {
-  items: ({ query }) => {
+  items: ({ query }: { query: string }) => {
     return variables
-      .filter(item => 
-        item.label.toLowerCase().includes(query.toLowerCase()) || 
+      .filter((item) =>
+        item.label.toLowerCase().includes(query.toLowerCase()) ||
         item.value.toLowerCase().includes(query.toLowerCase())
       )
-      .slice(0, 10)
+      .slice(0, 10);
   },
 
   render: () => {
-    let component
-    let popup: Instance<Props>
+    let component: ReactRenderer<typeof VariableSuggestion> | null = null;
+
+    let popup: Instance<Props> | null = null;
 
     return {
-      onStart: props => {
+      onStart: (props: any) => {
         component = new ReactRenderer(VariableSuggestion, {
           props,
           editor: props.editor,
-        })
+        });
 
         popup = tippy('body', {
           getReferenceClientRect: props.clientRect,
@@ -134,34 +129,33 @@ const variableSuggestion = {
           interactive: true,
           trigger: 'manual',
           placement: 'bottom-start',
-        })[0]
+        })[0];
       },
 
-      onUpdate(props) {
-        component.updateProps(props)
-
-        popup.setProps({
+      onUpdate(props: any) {
+        component?.updateProps(props);
+        popup?.setProps({
           getReferenceClientRect: props.clientRect,
-        })
+        });
       },
 
-      onKeyDown(props) {
+      onKeyDown(props: any) {
         if (props.event.key === 'Escape') {
-          popup.hide()
-          return true
+          popup?.hide();
+          return true;
         }
+        return (component?.ref as any)?.onKeyDown?.(props) ?? false;
 
-        return component.ref?.onKeyDown(props)
       },
 
       onExit() {
-        popup.destroy()
-        component.destroy()
+        popup?.destroy();
+        component?.destroy();
       },
-    }
+    };
   },
 
-  command: ({ editor, range, props }) => {
+  command: ({ editor, range, props }: { editor: any; range: any; props: Variable }) => {
     editor
       .chain()
       .focus()
@@ -174,9 +168,10 @@ const variableSuggestion = {
           value: props.value,
         },
       })
-      .run()
+      .run();
   },
-}
+};
+
 
 // Create a variable trigger extension
 const VariableTrigger = Extension.create({
@@ -207,7 +202,7 @@ const MenuBar = () => {
   const formatButtonClass = (isActive : boolean) => 
     `toolbar-btn ${isActive ? 'is-active' : ''}`;
 
-  const handleVariableSelect = (variable : variable) => {
+  const handleVariableSelect = (variable : Variable) => {
     editor.chain().focus().insertContent({
       type: 'variable',
       attrs: {
@@ -440,7 +435,7 @@ const MenuBar = () => {
             onClick={() => setShowVariables(!showVariables)}
           >
             Insert Variable
-          </button>
+          </button>A
           {showVariables && (
             <div className="variable-dropdown-content">
               {variables.map((variable) => (
@@ -461,8 +456,8 @@ const MenuBar = () => {
 }
 
 const extensions = [
-  Color.configure({ types: [TextStyle.name, ListItem.name] }),
-  TextStyle.configure({ types: [ListItem.name] }),
+  Color.configure({}), // Removed 'types'
+  TextStyle.configure(), // Removed 'types'
   StarterKit.configure({
     bulletList: {
       keepMarks: true,
@@ -473,9 +468,11 @@ const extensions = [
       keepAttributes: false,
     },
   }),
+  ListItem, // Include ListItem separately
   VariableNode,
   VariableTrigger,
-]
+];
+
 
 const content = `
 <h2>
@@ -503,17 +500,18 @@ const content = `
 export default () => {
   return (
     <div className="tiptap-editor-container">
-      <EditorProvider 
-        slotBefore={<MenuBar />} 
-        extensions={extensions} 
-        content={content}
-        className="tiptap-editor"
-        editorProps={{
-          attributes: {
-            class: 'tiptap-content',
-          },
-        }}
-      />
+      <div className="tiptap-editor"> {/* Moved className here */}
+        <EditorProvider
+          slotBefore={<MenuBar />}
+          extensions={extensions}
+          content={content}
+          editorProps={{
+            attributes: {
+              class: 'tiptap-content',
+            },
+          }}
+        />
+      </div>
     </div>
-  )
-}
+  );
+};
